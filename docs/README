@@ -1,0 +1,467 @@
+1️⃣ Contexto e Objetivo (sem código)
+1.1 Qual problema real estou resolvendo?
+
+➡️
+O Focus AI resolve a dificuldade de aprendizado profundo em tecnologia, indo além de respostas prontas.
+O sistema ensina como pensar, usando metodologia socrática para explicar:
+
+a raiz do problema
+
+o porquê do problema
+
+a solução
+
+edge cases reais (ex: overflow do YouTube em 2014)
+
+Além disso, ajuda pessoas perdidas na área de TI a se orientarem profissionalmente com roadmaps de carreira personalizados.
+
+1.2 Quem é o usuário?
+
+➡️
+
+Estudantes de Engenharia de Software, Computação e áreas correlatas
+
+Desenvolvedores júnior
+
+Pessoas em transição ou inseguras na carreira em TI
+
+1.3 O que é sucesso para esse projeto?
+
+➡️ (métrica objetiva)
+
+Usuários conseguem realizar sessões completas sem travamentos
+
+Latência aceitável durante geração de respostas
+
+Coleta consistente de feedback dos usuários
+
+Sistema estável sob carga moderada (MVP)
+
+1.4 O que NÃO é objetivo agora?
+
+➡️ (escopo fora)
+
+Hipersegurança (ex: gateways complexos como Kong)
+
+Múltiplos provedores de IA
+
+Microserviços distribuídos
+
+Otimizações extremas de custo
+
+2️⃣ Domínio (DDD – o coração do sistema)
+2.1 Qual é o domínio?
+
+➡️
+Aprendizado técnico profundo com metodologia socrática
+
+2.2 Quais conceitos têm identidade própria?
+
+➡️ (Entidades)
+
+User
+
+LearningSession
+
+Question
+
+Answer
+
+Feedback
+
+CareerProfile
+
+2.3 Quais conceitos são apenas valores?
+
+➡️ (Value Objects)
+
+Prompt
+
+Explanation
+
+EdgeCaseExample
+
+CareerStage (Júnior, Pleno, Sênior…)
+
+DifficultyLevel
+
+2.4 Qual é o Aggregate Root?
+
+➡️
+
+LearningSession
+
+Tudo gira em torno da sessão de aprendizado:
+
+Pergunta sem sessão ❌
+
+Resposta sem sessão ❌
+
+Feedback sem sessão ❌
+
+A sessão controla:
+
+fluxo
+
+custo
+
+concorrência
+
+consistência
+
+2.5 Quais regras NUNCA podem ser quebradas?
+
+➡️ (Invariantes do domínio)
+
+Uma LearningSession sempre pertence a um User
+
+Uma Answer sempre responde a uma Question
+
+Feedback só pode existir após uma Answer
+
+Uma sessão não pode gerar múltiplas respostas simultâneas
+
+3️⃣ Casos de Uso (Application Layer)
+3.1 Quais ações o sistema permite?
+
+➡️ (verbos no infinitivo)
+
+Iniciar sessão de aprendizado
+
+Enviar pergunta
+
+Gerar explicação socrática
+
+Explorar edge cases
+
+Enviar feedback
+
+Gerar roadmap de carreira
+
+Consultar histórico de conversas
+
+3.2 Qual é o fluxo feliz?
+
+➡️ (passo a passo)
+
+Usuário inicia uma LearningSession
+
+Usuário envia uma pergunta
+
+Sistema valida a sessão
+
+Sistema adquire lock da sessão
+
+Sistema gera resposta via LLM
+
+Sistema salva a resposta
+
+Sistema libera o lock
+
+Usuário visualiza a resposta
+
+Usuário envia feedback
+
+3.3 Quais fluxos de erro são esperados?
+
+➡️
+
+Sessão já está processando outra pergunta
+
+Timeout da LLM
+
+Erro externo de IA
+
+Prompt inválido
+
+Excesso de tokens
+
+Usuário tenta pular etapas
+
+3.4 O que é síncrono e o que pode ser assíncrono?
+
+➡️
+
+Síncrono
+
+Enviar pergunta
+
+Gerar resposta socrática
+
+Assíncrono
+
+Persistência de logs
+
+Coleta de métricas
+
+Armazenamento de feedback
+
+Analytics
+
+4️⃣ Fronteiras do Sistema (Ports & Adapters)
+4.1 O que meu domínio NÃO controla?
+
+➡️
+
+Provedor de LLM
+
+Banco de dados
+
+Cache
+
+Filas
+
+Infraestrutura
+
+4.2 Quais portas eu preciso?
+
+➡️
+
+LearningSessionRepository
+
+UserRepository
+
+LLMService
+
+FeedbackRepository
+
+LockProvider
+
+4.3 O que pode mudar sem quebrar o domínio?
+
+➡️
+
+Banco de dados
+
+Cache
+
+Provedor de IA
+
+Framework web
+
+Infraestrutura
+
+5️⃣ Performance e Custo (antes da infra)
+5.1 Onde está o recurso caro?
+
+➡️
+
+LLM (tokens + latência)
+
+5.2 Onde posso cachear?
+
+➡️
+
+Edge cases comuns
+
+Roadmaps de carreira por perfil
+
+Respostas idempotentes por sessão
+
+5.3 O que NÃO posso executar em paralelo?
+
+➡️
+
+Geração de resposta dentro da mesma LearningSession
+
+5.4 Qual é o pior cenário?
+
+➡️
+
+Pico de usuários simultâneos
+
+Ataque de spam de perguntas
+
+Falha total do provedor de LLM
+
+6️⃣ Concorrência e Consistência
+6.1 O que acontece se 100 usuários fizerem isso ao mesmo tempo?
+
+➡️
+
+Sessões independentes funcionam normalmente
+
+Cada sessão mantém seu próprio lock
+
+Sistema degrada por latência, não por inconsistência
+
+6.2 Onde preciso de lock?
+
+➡️
+
+Por LearningSession.id
+
+Durante a geração da resposta
+
+6.3 O sistema tolera duplicação?
+
+➡️
+
+Sim: logs, métricas
+
+Não: geração de resposta por sessão
+
+7️⃣ Dados e Persistência
+7.1 O que precisa ser persistido?
+
+➡️
+
+User
+
+LearningSession
+
+Question
+
+Answer
+
+Feedback
+
+7.2 O que pode ser descartável?
+
+➡️
+
+Cache
+
+Locks
+
+Prompts temporários
+
+Dados de observabilidade
+
+7.3 Leitura e escrita são iguais?
+
+➡️
+
+Não
+
+Escrita é mais cara
+
+Leitura pode ser otimizada (CQRS leve no futuro)
+
+8️⃣ Erros e Falhas
+8.1 O que pode falhar?
+
+➡️
+
+LLM
+
+Banco de dados
+
+Rede
+
+Cache
+
+8.2 Como o sistema se recupera?
+
+➡️
+
+Retry controlado
+
+Fallback para mensagem educacional
+
+Degradação graciosa
+
+8.3 O que o usuário vê quando dá errado?
+
+➡️
+
+Mensagem clara
+
+Sem stack trace
+
+Orientação de retry
+
+9️⃣ Observabilidade (desde o MVP)
+9.1 O que preciso medir?
+
+➡️
+
+Latência por resposta
+
+Erros da LLM
+
+Custo por sessão
+
+Sessões ativas
+
+9.2 Onde coloco logs?
+
+➡️
+
+Entrada de requisição
+
+Saída da LLM
+
+Erros
+
+Locks
+
+9.3 Como saberei que está lento?
+
+➡️
+
+Tempo médio de resposta por sessão
+
+Percentil 95 de latência
+
+🔟 Evolução (futuro sem dor)
+10.1 O que provavelmente vai mudar?
+
+➡️
+
+Volume de usuários
+
+Estratégia de cache
+
+Provedor de IA
+
+10.2 O que NÃO quero refatorar depois?
+
+➡️
+
+Domínio
+
+LearningSession
+
+Invariantes
+
+10.3 Qual é o limite do MVP?
+
+➡️
+
+Centenas de usuários simultâneos
+
+Custo mensal controlado
+
+Uma única LLM
+
+🏁 Checklist Final
+
+ Problema entendido sem falar de tecnologia
+
+ Domínio definido
+
+ Entidades claras
+
+ Casos de uso explícitos
+
+ Gargalos conhecidos
+
+ Estratégia de cache definida
+
+ Estratégia de concorrência definida
+
+ Limite do MVP definido
+
+Frase para lembrar:
+“Arquitetura não é sobre escolher ferramentas, é sobre adiar decisões caras.”
+
+Se quiser, próximo passo natural:
+
+📐 transformar isso em diagrama DDD / C4
+
+🧱 mapear direto para Clean Architecture
+
+🧪 gerar testes de domínio a partir das invariantes
+
+🚀 definir arquitetura MVP mínima
