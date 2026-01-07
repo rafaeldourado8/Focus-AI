@@ -1,0 +1,92 @@
+from fastapi import APIRouter, HTTPException, Depends
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
+from src.presentation.auth_routes import verify_token
+from src.infrastructure.database.connection import get_db
+from src.infrastructure.database.session_repository import SessionRepository
+from src.infrastructure.database.qa_repository import QuestionRepository, AnswerRepository
+from src.infrastructure.cache.redis_service import CacheService
+from src.infrastructure.llm.openai_service import LLMService
+from src.application.use_cases.create_session import CreateSessionUseCase
+from src.application.use_cases.ask_question import AskQuestionUseCase
+
+router = APIRouter()
+
+class QuestionRequest(BaseModel):
+    content: str
+
+class SessionResponse(BaseModel):
+    session_id: str
+    status: str
+
+class AnswerResponse(BaseModel):
+    content: str
+    explanation: str
+    edge_cases: str
+
+@router.post("/", response_model=SessionResponse)
+async def create_session(user_id: str = Depends(verify_token), db: Session = Depends(get_db)):
+    session_repo = SessionRepository(db)
+    use_case = CreateSessionUseCase(session_repo)
+    result = use_case.execute(user_id)
+    return SessionResponse(session_id=result["session_id"], status=result["status"])
+
+@router.post("/{session_id}/questions", response_model=AnswerResponse)
+async def ask_question(
+    session_id: str, 
+    request: QuestionRequest,
+    user_id: str = Depends(verify_token),
+    db: Session = Depends(get_db)
+):
+    try:
+        session_repo = SessionRepository(db)
+        question_repo = QuestionRepository(db)
+        answer_repo = AnswerRepository(db)
+        cache_service = CacheService()
+        llm_service = LLMService()
+        
+        use_case = AskQuestionUseCase(
+            session_repo,
+            question_repo,
+            answer_repo,
+            cache_service,
+            llm_service
+        )
+        
+        result = use_case.execute(session_id, user_id, request.content)
+        
+        return AnswerResponse(
+            content=result["content"],
+            explanation=result["explanation"],
+            edge_cases=result["edge_cases"]
+        )
+    except ValueError as e:
+        if "Unauthorized" in str(e):
+            raise HTTPException(status_code=403, detail=str(e))
+        elif "not found" in str(e):
+            raise HTTPException(status_code=404, detail=str(e))
+        elif "processing" in str(e):
+            raise HTTPException(status_code=409, detail=str(e))
+        else:
+            raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/{session_id}")
+async def get_session(
+    session_id: str, 
+    user_id: str = Depends(verify_token),
+    db: Session = Depends(get_db)
+):
+    session_repo = SessionRepository(db)
+    session = session_repo.get_by_id(session_id)
+    
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    if session.user_id != user_id:
+        raise HTTPException(status_code=403, detail="Unauthorized")
+    
+    return {
+        "session_id": session.id,
+        "status": session.status.value,
+        "created_at": session.created_at.isoformat()
+    }
