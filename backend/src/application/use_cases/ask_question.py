@@ -3,7 +3,7 @@ from src.domain.learning_session import SessionStatus
 from src.infrastructure.database.session_repository import SessionRepository
 from src.infrastructure.database.qa_repository import QuestionRepository, AnswerRepository
 from src.infrastructure.cache.redis_service import CacheService
-from src.infrastructure.llm.openai_service import LLMService
+from src.infrastructure.llm.chain_validator_service import ChainValidatorService
 import hashlib
 
 class AskQuestionUseCase:
@@ -13,7 +13,7 @@ class AskQuestionUseCase:
         question_repository: QuestionRepository,
         answer_repository: AnswerRepository,
         cache_service: CacheService,
-        llm_service: LLMService
+        llm_service: ChainValidatorService
     ):
         self.session_repository = session_repository
         self.question_repository = question_repository
@@ -42,17 +42,15 @@ class AskQuestionUseCase:
             answer = Answer(
                 question_id=created_question.id,
                 content=cached_answer["content"],
-                explanation=cached_answer["explanation"],
-                edge_cases=cached_answer["edge_cases"]
+                explanation="",
+                edge_cases=""
             )
             created_answer = self.answer_repository.create(answer)
             
             return {
-                "question_id": created_question.id,
-                "answer_id": created_answer.id,
                 "content": created_answer.content,
-                "explanation": created_answer.explanation,
-                "edge_cases": created_answer.edge_cases
+                "model": cached_answer.get("model", "cached"),
+                "used_senior": cached_answer.get("used_senior", False)
             }
         
         if not self.cache_service.acquire_lock(session_id, ttl=180):
@@ -64,30 +62,28 @@ class AskQuestionUseCase:
             question = Question(session_id=session_id, content=content)
             created_question = self.question_repository.create(question)
             
-            llm_response = self.llm_service.generate_socratic_answer(content)
+            llm_response = self.llm_service.generate_answer(content)
             
             answer = Answer(
                 question_id=created_question.id,
                 content=llm_response["content"],
-                explanation=llm_response["explanation"],
-                edge_cases=llm_response["edge_cases"]
+                explanation="",
+                edge_cases=""
             )
             created_answer = self.answer_repository.create(answer)
             
             self.cache_service.cache_answer(question_hash, {
                 "content": created_answer.content,
-                "explanation": created_answer.explanation,
-                "edge_cases": created_answer.edge_cases
+                "model": llm_response["model"],
+                "used_senior": llm_response["used_senior"]
             })
             
             self.session_repository.update_status(session_id, SessionStatus.ACTIVE)
             
             return {
-                "question_id": created_question.id,
-                "answer_id": created_answer.id,
                 "content": created_answer.content,
-                "explanation": created_answer.explanation,
-                "edge_cases": created_answer.edge_cases
+                "model": llm_response["model"],
+                "used_senior": llm_response["used_senior"]
             }
         
         finally:

@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     JWT_EXPIRATION_MINUTES: int = 3
     GEMINI_API_KEY: str
     GOOGLE_CLIENT_ID: str = ""
+    CONFIDENCE_THRESHOLD: int = 70
     
     class Config:
         env_file = ".env"

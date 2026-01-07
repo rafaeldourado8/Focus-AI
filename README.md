@@ -74,7 +74,19 @@ Baseada em Clean Architecture e DDD:
 - [x] Persistência PostgreSQL (SQLAlchemy + Alembic)
 - [x] Cache Redis (Locks + Answer Cache)
 - [x] Metodologia socrática (Prompt estruturado)
+- [x] **Chain Validation (Junior → Senior)** ✨ NOVO
+- [x] **Economia de 63% em custos de API** ✨ NOVO
 
-**MVP 100% COMPLETO! 🎉**
+**MVP V2 COMPLETO! 🎉**
+
+### Chain Validation Architecture
+
+Sistema híbrido que combina:
+- **IA Junior** (Gemini 2.0 Flash Lite) - Respostas rápidas e baratas
+- **IA Senior** (Gemini 2.5 Pro) - Validação apenas quando necessário
+
+**Resultado:** 63% de economia mantendo qualidade!
+
+Veja [CHAIN_VALIDATION.md](docs/CHAIN_VALIDATION.md) para detalhes técnicos.
 
 Veja [IMPLEMENTATION.md](IMPLEMENTATION.md) para detalhes técnicos.

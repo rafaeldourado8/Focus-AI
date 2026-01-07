@@ -6,7 +6,7 @@ from src.infrastructure.database.connection import get_db
 from src.infrastructure.database.session_repository import SessionRepository
 from src.infrastructure.database.qa_repository import QuestionRepository, AnswerRepository
 from src.infrastructure.cache.redis_service import CacheService
-from src.infrastructure.llm.openai_service import LLMService
+from src.infrastructure.llm.chain_validator_service import ChainValidatorService
 from src.application.use_cases.create_session import CreateSessionUseCase
 from src.application.use_cases.ask_question import AskQuestionUseCase
 
@@ -21,8 +21,8 @@ class SessionResponse(BaseModel):
 
 class AnswerResponse(BaseModel):
     content: str
-    explanation: str
-    edge_cases: str
+    model: str = "gemini"
+    used_senior: bool = False
 
 @router.post("/", response_model=SessionResponse)
 async def create_session(user_id: str = Depends(verify_token), db: Session = Depends(get_db)):
@@ -43,7 +43,7 @@ async def ask_question(
         question_repo = QuestionRepository(db)
         answer_repo = AnswerRepository(db)
         cache_service = CacheService()
-        llm_service = LLMService()
+        llm_service = ChainValidatorService()
         
         use_case = AskQuestionUseCase(
             session_repo,
@@ -57,8 +57,8 @@ async def ask_question(
         
         return AnswerResponse(
             content=result["content"],
-            explanation=result["explanation"],
-            edge_cases=result["edge_cases"]
+            model=result.get("model", "gemini"),
+            used_senior=result.get("used_senior", False)
         )
     except ValueError as e:
         if "Unauthorized" in str(e):

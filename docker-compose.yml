@@ -37,6 +37,7 @@ services:
       - JWT_EXPIRATION_MINUTES=3
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - CONFIDENCE_THRESHOLD=70
     depends_on:
       postgres:
         condition: service_healthy
