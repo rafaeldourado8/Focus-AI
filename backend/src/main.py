@@ -9,6 +9,8 @@ from src.presentation.api_key_routes import router as api_key_router
 from src.presentation.api_gateway.public_routes import router as public_api_router
 from src.presentation.analytics_routes import router as analytics_router
 from src.presentation.feedback_routes import router as feedback_router
+from src.presentation.notification_routes import router as notification_router
+from src.presentation.user_settings_routes import router as user_settings_router
 from src.infrastructure.database.connection import init_db
 from src.infrastructure.identity import PRODUCT_NAME, API_HEADER_POWERED_BY, API_HEADER_VERSION
 from src.infrastructure.monitoring.metrics_service import MetricsService
@@ -47,6 +49,8 @@ app.include_router(session_router, prefix="/api/sessions", tags=["sessions"])
 app.include_router(api_key_router, prefix="/api/keys", tags=["api-keys"])
 app.include_router(analytics_router, prefix="/api/analytics", tags=["analytics"])
 app.include_router(feedback_router, prefix="/api/feedback", tags=["feedback"])
+app.include_router(notification_router, prefix="/api/notifications", tags=["notifications"])
+app.include_router(user_settings_router, prefix="/api/user", tags=["user"])
 app.include_router(public_api_router, prefix="/v1", tags=["public-api"])
 
 @app.get("/")

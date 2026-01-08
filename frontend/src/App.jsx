@@ -7,45 +7,18 @@ import APIKeys from './components/APIKeys';
 import Usage from './components/Usage';
 import Settings from './components/Settings';
 import { useAxiosInterceptor } from './hooks/useAxios';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 
-const App = () => {
-  const [token, setToken] = useState(null);
+const AppContent = () => {
+  const { isAuthenticated, login, logout } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState('dashboard');
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('sessionId');
-    setToken(null);
-  };
-
-  useAxiosInterceptor(handleLogout);
+  useAxiosInterceptor(logout);
 
   useEffect(() => {
-    const validateToken = async () => {
-      const savedToken = localStorage.getItem('token');
-      if (savedToken) {
-        try {
-          const response = await fetch('http://localhost:8000/api/sessions/', {
-            headers: { 'Authorization': `Bearer ${savedToken}` }
-          });
-          if (response.ok) {
-            setToken(savedToken);
-          } else {
-            localStorage.removeItem('token');
-          }
-        } catch {
-          localStorage.removeItem('token');
-        }
-      }
-      setIsLoading(false);
-    };
-    validateToken();
+    setIsLoading(false);
   }, []);
-
-  const handleLogin = (newToken) => {
-    setToken(newToken);
-  };
 
   const handleNavigate = (page) => {
     setCurrentPage(page);
@@ -59,23 +32,28 @@ const App = () => {
     );
   }
 
-  if (!token) {
-    return <Login onLogin={handleLogin} />;
+  if (!isAuthenticated) {
+    return <Login onLogin={login} />;
   }
 
-  // Render page without Layout for Chat (has its own layout)
   if (currentPage === 'chat') {
-    return <Chat token={token} onLogout={handleLogout} onNavigate={handleNavigate} />;
+    return <Chat onLogout={logout} onNavigate={handleNavigate} />;
   }
 
   return (
-    <Layout currentPage={currentPage} onNavigate={handleNavigate} onLogout={handleLogout}>
-      {currentPage === 'dashboard' && <Dashboard token={token} />}
-      {currentPage === 'api-keys' && <APIKeys token={token} />}
-      {currentPage === 'usage' && <Usage token={token} />}
-      {currentPage === 'settings' && <Settings token={token} />}
+    <Layout currentPage={currentPage} onNavigate={handleNavigate} onLogout={logout}>
+      {currentPage === 'dashboard' && <Dashboard />}
+      {currentPage === 'api-keys' && <APIKeys />}
+      {currentPage === 'usage' && <Usage />}
+      {currentPage === 'settings' && <Settings />}
     </Layout>
   );
 };
+
+const App = () => (
+  <AuthProvider>
+    <AppContent />
+  </AuthProvider>
+);
 
 export default App;

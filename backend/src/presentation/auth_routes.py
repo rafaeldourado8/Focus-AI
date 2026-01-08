@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Response, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -34,9 +34,8 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security), 
     return user_id
 
 @router.post("/google", response_model=TokenResponse)
-async def google_login(request: GoogleLoginRequest, db: Session = Depends(get_db)):
+async def google_login(request: GoogleLoginRequest, response: Response, db: Session = Depends(get_db)):
     try:
-        # Corrigido: margem de 15 segundos para dessincronização de relógio
         idinfo = id_token.verify_oauth2_token(
             request.token, 
             requests.Request(), 
@@ -56,8 +55,19 @@ async def google_login(request: GoogleLoginRequest, db: Session = Depends(get_db
             )
             user = user_repo.create(user_entity)
         
-        token = AuthService.create_access_token({"sub": str(user.id)})
-        return TokenResponse(access_token=token)
+        access_token = AuthService.create_access_token({"sub": str(user.id)})
+        refresh_token = AuthService.create_refresh_token({"sub": str(user.id)})
+        
+        response.set_cookie(
+            key="refresh_token",
+            value=refresh_token,
+            httponly=True,
+            secure=True,
+            samesite="strict",
+            max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60
+        )
+        
+        return TokenResponse(access_token=access_token)
         
     except Exception as e:
         logger.error(f"Google login fail: {e}")
@@ -68,3 +78,36 @@ async def get_current_user(user_id: str = Depends(verify_token), db: Session = D
     user_repo = UserRepository(db)
     user = user_repo.get_by_id(user_id)
     return {"user_id": user.id, "email": user.email}
+
+@router.post("/refresh", response_model=TokenResponse)
+async def refresh_token(request: Request, response: Response, db: Session = Depends(get_db)):
+    refresh_token = request.cookies.get("refresh_token")
+    if not refresh_token:
+        raise HTTPException(status_code=401, detail="Refresh token não encontrado")
+    
+    user_id = AuthService.verify_token(refresh_token, token_type="refresh")
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Refresh token inválido")
+    
+    user_repo = UserRepository(db)
+    if not user_repo.get_by_id(user_id):
+        raise HTTPException(status_code=401, detail="Utilizador não encontrado")
+    
+    new_access_token = AuthService.create_access_token({"sub": user_id})
+    new_refresh_token = AuthService.create_refresh_token({"sub": user_id})
+    
+    response.set_cookie(
+        key="refresh_token",
+        value=new_refresh_token,
+        httponly=True,
+        secure=True,
+        samesite="strict",
+        max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60
+    )
+    
+    return TokenResponse(access_token=new_access_token)
+
+@router.post("/logout")
+async def logout(response: Response):
+    response.delete_cookie("refresh_token")
+    return {"message": "Logout realizado com sucesso"}

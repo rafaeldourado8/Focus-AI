@@ -43,13 +43,19 @@ const Login = ({ onLogin }) => {
       const res = await fetch('http://localhost:8000/api/auth/google', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ token: response.credential })
       });
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || 'Erro ao fazer login');
 
-      localStorage.setItem('token', data.access_token);
+      // Notifica login
+      fetch('http://localhost:8000/api/notifications/login-alert', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${data.access_token}` }
+      }).catch(err => console.error('Erro ao notificar login:', err));
+
       onLogin(data.access_token);
     } catch (err) {
       console.error('Login error:', err);

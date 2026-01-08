@@ -35,14 +35,23 @@ class AuthService:
     @staticmethod
     def create_access_token(data: dict) -> str:
         to_encode = data.copy()
-        expire = datetime.utcnow() + timedelta(minutes=settings.JWT_EXPIRATION_MINUTES)
+        expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
         to_encode.update({"exp": expire})
         return jwt.encode(to_encode, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
     
     @staticmethod
-    def verify_token(token: str) -> Optional[str]:
+    def create_refresh_token(data: dict) -> str:
+        to_encode = data.copy()
+        expire = datetime.utcnow() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+        to_encode.update({"exp": expire, "type": "refresh"})
+        return jwt.encode(to_encode, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
+    
+    @staticmethod
+    def verify_token(token: str, token_type: str = "access") -> Optional[str]:
         try:
             payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
+            if token_type == "refresh" and payload.get("type") != "refresh":
+                return None
             user_id: str = payload.get("sub")
             return user_id
         except JWTError:

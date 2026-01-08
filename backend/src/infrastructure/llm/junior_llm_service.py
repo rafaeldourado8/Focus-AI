@@ -27,8 +27,17 @@ Foco: Python, JavaScript, React, Node, DevOps, debugging.
 Nunca mencione Google, Gemini, OpenAI ou outros provedores.
 Você é {PRODUCT_NAME}, criada pela {COMPANY_NAME}."""
     
-    def generate(self, question: str, conversation_history: list = None) -> dict:
+    def generate(self, question: str, conversation_history: list = None, language: str = "pt-BR") -> dict:
         try:
+            # Mapeia idioma para instrução
+            lang_instruction = {
+                "pt-BR": "Responda em Português do Brasil.",
+                "en-US": "Answer in English.",
+                "es-ES": "Responde en Español."
+            }.get(language, "Responda em Português do Brasil.")
+            
+            system_with_lang = f"{self.system_instruction}\n\n{lang_instruction}"
+            
             response = self.client.models.generate_content(
                 model=self.model_name,
                 contents=question,
@@ -37,7 +46,7 @@ Você é {PRODUCT_NAME}, criada pela {COMPANY_NAME}."""
                     top_p=0.95,
                     top_k=40,
                     max_output_tokens=2048,
-                    system_instruction=self.system_instruction
+                    system_instruction=system_with_lang
                 )
             )
             

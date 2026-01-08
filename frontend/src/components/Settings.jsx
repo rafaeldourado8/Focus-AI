@@ -1,22 +1,78 @@
-import { useState } from 'react';
-import { User, Bell, Shield, Palette, Save } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { User, Bell, Shield, Palette, Save, Check } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
-const Settings = ({ token }) => {
+const Settings = () => {
+  const { accessToken } = useAuth();
+  const [userEmail, setUserEmail] = useState('');
+  const [userName, setUserName] = useState('');
   const [settings, setSettings] = useState({
     debugMode: false,
     notifications: true,
-    theme: 'dark',
     language: 'pt-BR'
   });
-
   const [saved, setSaved] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const handleSave = () => {
-    // TODO: Save to backend
-    localStorage.setItem('userSettings', JSON.stringify(settings));
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  useEffect(() => {
+    loadUserData();
+  }, [accessToken]);
+
+  const loadUserData = async () => {
+    if (!accessToken) return;
+    
+    try {
+      const response = await fetch('http://localhost:8000/api/user/me', {
+        headers: { 'Authorization': `Bearer ${accessToken}` }
+      });
+      const data = await response.json();
+      setUserEmail(data.email);
+      setUserName(data.name || '');
+      setSettings(data.settings);
+    } catch (err) {
+      console.error('Erro ao carregar dados:', err);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const handleSave = async () => {
+    try {
+      const response = await fetch('http://localhost:8000/api/user/me', {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: userName,
+          debug_mode: settings.debugMode,
+          language: settings.language,
+          notifications: settings.notifications
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        setSettings(data.settings);
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2000);
+      } else {
+        console.error('Erro ao salvar:', data);
+      }
+    } catch (err) {
+      console.error('Erro ao salvar:', err);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="animate-spin w-8 h-8 border-2 border-cerberus-border border-t-white rounded-full" />
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
@@ -33,8 +89,8 @@ const Settings = ({ token }) => {
               <input
                 type="email"
                 disabled
-                value="user@example.com"
-                className="w-full px-3 py-2 bg-cerberus-darker border border-cerberus-border rounded-lg text-cerberus-text-muted"
+                value={userEmail}
+                className="w-full px-3 py-2 bg-cerberus-darker border border-cerberus-border rounded-lg text-cerberus-text-muted cursor-not-allowed"
               />
             </div>
             <div>
@@ -44,7 +100,9 @@ const Settings = ({ token }) => {
               <input
                 type="text"
                 placeholder="Seu nome"
-                className="w-full px-3 py-2 bg-cerberus-darker border border-cerberus-border rounded-lg text-white outline-none focus:border-cerberus-border-light"
+                value={userName}
+                onChange={(e) => setUserName(e.target.value)}
+                className="w-full px-3 py-2 bg-cerberus-darker border border-cerberus-border rounded-lg text-white outline-none focus:border-cerberus-border-light transition-colors"
               />
             </div>
           </div>
@@ -97,13 +155,14 @@ const Settings = ({ token }) => {
         <div className="flex justify-end pt-4">
           <button
             onClick={handleSave}
+            disabled={saved}
             className={`flex items-center gap-2 px-6 py-2 rounded-lg transition-all ${
               saved
-                ? 'bg-green-500 text-white'
+                ? 'bg-cerberus-dark text-white border border-cerberus-border cursor-default'
                 : 'bg-white text-black hover:bg-gray-200'
             }`}
           >
-            <Save className="w-4 h-4" />
+            {saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
             {saved ? 'Salvo!' : 'Salvar Alterações'}
           </button>
         </div>
@@ -131,12 +190,12 @@ const ToggleSetting = ({ label, description, checked, onChange }) => (
     <button
       onClick={() => onChange(!checked)}
       className={`relative w-12 h-6 rounded-full transition-colors ${
-        checked ? 'bg-blue-500' : 'bg-cerberus-darker border border-cerberus-border'
+        checked ? 'bg-white' : 'bg-cerberus-darker border border-cerberus-border'
       }`}
     >
       <div
-        className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${
-          checked ? 'translate-x-7' : 'translate-x-1'
+        className={`absolute top-1 w-4 h-4 rounded-full transition-transform ${
+          checked ? 'bg-black translate-x-7' : 'bg-white translate-x-1'
         }`}
       />
     </button>

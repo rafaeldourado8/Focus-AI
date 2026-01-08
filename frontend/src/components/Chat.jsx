@@ -3,8 +3,10 @@ import { Send, Menu, LogOut, Copy, Check, User, RotateCcw, Sparkles, Bug, ArrowL
 import CerberusIcon from './CerberusIcon';
 import Sidebar from './Sidebar';
 import ThinkingProcess from './ThinkingProcess';
+import { useAuth } from '../contexts/AuthContext';
 
-const Chat = ({ token, onLogout, onNavigate }) => {
+const Chat = ({ onLogout, onNavigate }) => {
+  const { accessToken } = useAuth();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -18,14 +20,38 @@ const Chat = ({ token, onLogout, onNavigate }) => {
   const inputRef = useRef(null);
   const messagesContainerRef = useRef(null);
 
+  // Carrega debug_mode das configurações do usuário
   useEffect(() => {
-    loadSessions();
-    const savedSessionId = localStorage.getItem('sessionId');
-    if (savedSessionId) {
-      setSessionId(savedSessionId);
-      loadSessionHistory(savedSessionId);
-    }
-  }, []);
+    const loadUserSettings = async () => {
+      if (!accessToken) return;
+      
+      try {
+        const response = await fetch('http://localhost:8000/api/user/me', {
+          headers: { 'Authorization': `Bearer ${accessToken}` }
+        });
+        const data = await response.json();
+        setDebugMode(data.settings?.debugMode || false);
+      } catch (err) {
+        console.error('Erro ao carregar configurações:', err);
+      }
+    };
+    
+    loadUserSettings();
+  }, [accessToken]);
+
+  useEffect(() => {
+    if (!accessToken) return;
+    
+    loadSessions().then(() => {
+      const savedSessionId = localStorage.getItem('sessionId');
+      if (savedSessionId && sessions.find(s => s.id === savedSessionId)) {
+        setSessionId(savedSessionId);
+        loadSessionHistory(savedSessionId);
+      } else if (savedSessionId) {
+        localStorage.removeItem('sessionId');
+      }
+    });
+  }, [accessToken]);
 
   useEffect(() => {
     if (autoScroll) {
@@ -42,7 +68,7 @@ const Chat = ({ token, onLogout, onNavigate }) => {
     try {
       const response = await fetch('http://localhost:8000/api/sessions/', {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 'Authorization': `Bearer ${accessToken}` }
       });
       if (!response.ok) throw new Error('Erro ao criar sessão');
       const data = await response.json();
@@ -56,25 +82,39 @@ const Chat = ({ token, onLogout, onNavigate }) => {
   };
 
   const loadSessions = async () => {
+    if (!accessToken) return;
+    
     try {
       const response = await fetch('http://localhost:8000/api/sessions/', {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 'Authorization': `Bearer ${accessToken}` }
       });
       const data = await response.json();
       setSessions(data.sessions || []);
+      return data.sessions || [];
     } catch (err) {
       console.error('Erro ao carregar sessões:', err);
+      return [];
     }
   };
 
   const loadSessionHistory = async (id) => {
     try {
       const response = await fetch(`http://localhost:8000/api/sessions/${id}/history`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 'Authorization': `Bearer ${accessToken}` }
       });
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          localStorage.removeItem('sessionId');
+          setSessionId(null);
+          setMessages([]);
+          return;
+        }
+        throw new Error('Erro ao carregar histórico');
+      }
+      
       const data = await response.json();
       
-      // Converte histórico para formato de mensagens
       const msgs = [];
       data.history.forEach(item => {
         msgs.push({ role: 'user', content: item.question.content });
@@ -109,7 +149,7 @@ const Chat = ({ token, onLogout, onNavigate }) => {
       const response = await fetch(`http://localhost:8000/api/sessions/${sessionId}/questions`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ 
@@ -254,13 +294,20 @@ const Chat = ({ token, onLogout, onNavigate }) => {
             <div className="max-w-3xl mx-auto px-4 py-6">
               <div className="space-y-6">
                 {messages.map((msg, idx) => (
-                  <Message key={idx} message={msg} token={token} />
+                  <Message key={idx} message={msg} />
                 ))}
+                {loading && thinkingSteps.length > 0 && (
+                  <div className="flex gap-4">
+                    <div className="w-8 h-8 rounded-full bg-cerberus-dark border border-cerberus-border flex items-center justify-center shrink-0">
+                      <Sparkles className="w-4 h-4 text-cerberus-text-secondary" />
+                    </div>
+                    <div className="flex-1">
+                      <ThinkingProcess steps={thinkingSteps} isThinking={true} />
+                    </div>
+                  </div>
+                )}
                 {loading && (
-                  <>
-                    <ThinkingProcess steps={thinkingSteps} isThinking={true} />
-                    <LoadingMessage />
-                  </>
+                  <LoadingMessage />
                 )}
                 <div ref={messagesEndRef} />
               </div>
@@ -349,12 +396,14 @@ const SuggestionCard = ({ icon, text }) => (
   </button>
 );
 
-const Message = ({ message, token }) => {
+const Message = ({ message }) => {
+  const { accessToken } = useAuth();
   const isUser = message.role === 'user';
   const isError = message.role === 'error';
   const [copied, setCopied] = useState(false);
   const [feedback, setFeedback] = useState(null);
   const [showThinking, setShowThinking] = useState(false);
+  const [hidden, setHidden] = useState(false);
 
   const handleFeedback = async (rating) => {
     if (!message.answerId) return;
@@ -363,7 +412,7 @@ const Message = ({ message, token }) => {
       await fetch('http://localhost:8000/api/feedback/', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
@@ -372,6 +421,9 @@ const Message = ({ message, token }) => {
         })
       });
       setFeedback(rating);
+      if (rating === 1) {
+        setHidden(true);
+      }
     } catch (err) {
       console.error('Erro ao enviar feedback:', err);
     }
@@ -433,20 +485,21 @@ const Message = ({ message, token }) => {
   };
 
   return (
-    <div className={`flex gap-4 message-enter ${isUser ? 'justify-end' : ''}`}>
+    <div className={`flex gap-4 ${isUser ? 'justify-end' : ''} ${hidden ? 'hidden' : ''}`}>
       {!isUser && (
         <div className="w-8 h-8 rounded-full bg-cerberus-dark border border-cerberus-border flex items-center justify-center shrink-0">
-          <CerberusIcon className="w-5 h-5 text-white" />
+          <Sparkles className="w-4 h-4 text-cerberus-text-secondary" />
         </div>
       )}
       
-      <div className={`flex-1 max-w-[85%] ${isUser ? 'flex justify-end' : ''}`}>
+      <div className={`flex-1 ${isUser ? 'flex justify-end' : 'max-w-[85%]'}`}>
         {!isUser && message.thinkingProcess && message.thinkingProcess.length > 0 && (
           <button
             onClick={() => setShowThinking(!showThinking)}
-            className="text-xs text-cerberus-text-muted hover:text-white mb-2 flex items-center gap-1"
+            className="text-xs text-cerberus-text-muted hover:text-white mb-2 flex items-center gap-1.5 px-2 py-1 rounded hover:bg-cerberus-dark transition-colors"
           >
-            {showThinking ? '▼' : '▶'} Ver processo de raciocínio
+            <Sparkles className="w-3 h-3" />
+            {showThinking ? 'Ocultar raciocínio' : 'Ver raciocínio'}
           </button>
         )}
         
@@ -456,43 +509,44 @@ const Message = ({ message, token }) => {
           </div>
         )}
         
-        <div className={`inline-block rounded-2xl px-4 py-3 ${
+        <div className={`rounded-2xl ${
           isUser 
-            ? 'bg-white text-black' 
+            ? 'bg-cerberus-dark border border-cerberus-border text-white px-4 py-3 inline-block' 
             : isError 
-            ? 'bg-red-950/30 border border-red-900/50 text-red-400'
-            : 'bg-cerberus-dark border border-cerberus-border text-white'
+            ? 'bg-red-950/30 border border-red-900/50 text-red-400 px-4 py-3'
+            : 'bg-transparent text-white'
         }`}>
           <div className="text-[15px] leading-relaxed">
             {renderContent(message.content)}
           </div>
           {!isUser && !isError && message.answerId && (
-            <div className="flex items-center gap-2 mt-3 pt-3 border-t border-cerberus-border">
-              <span className="text-xs text-cerberus-text-muted">Útil?</span>
+            <div className="flex items-center gap-3 mt-4 pt-3 border-t border-cerberus-border/50">
               <button
                 onClick={() => handleFeedback(5)}
                 disabled={feedback !== null}
-                className={`p-1 rounded transition-colors ${
+                className={`p-2 rounded-lg transition-all ${
                   feedback === 5
-                    ? 'text-green-400'
-                    : 'text-cerberus-text-muted hover:text-green-400'
+                    ? 'bg-cerberus-dark text-white'
+                    : 'hover:bg-cerberus-dark text-cerberus-text-muted hover:text-white'
                 } disabled:cursor-not-allowed`}
+                title="Resposta útil"
               >
                 <ThumbsUp className="w-4 h-4" />
               </button>
               <button
                 onClick={() => handleFeedback(1)}
                 disabled={feedback !== null}
-                className={`p-1 rounded transition-colors ${
+                className={`p-2 rounded-lg transition-all ${
                   feedback === 1
-                    ? 'text-red-400'
-                    : 'text-cerberus-text-muted hover:text-red-400'
+                    ? 'bg-cerberus-dark text-white'
+                    : 'hover:bg-cerberus-dark text-cerberus-text-muted hover:text-white'
                 } disabled:cursor-not-allowed`}
+                title="Resposta não útil"
               >
                 <ThumbsDown className="w-4 h-4" />
               </button>
               {feedback && (
-                <span className="text-xs text-cerberus-text-muted ml-2">Obrigado!</span>
+                <span className="text-xs text-cerberus-text-muted">Obrigado pelo feedback!</span>
               )}
             </div>
           )}
@@ -500,8 +554,8 @@ const Message = ({ message, token }) => {
       </div>
 
       {isUser && (
-        <div className="w-8 h-8 rounded-full bg-cerberus-accent flex items-center justify-center shrink-0">
-          <User className="w-4 h-4 text-white" />
+        <div className="w-8 h-8 rounded-full bg-cerberus-dark border border-cerberus-border flex items-center justify-center shrink-0">
+          <User className="w-4 h-4 text-cerberus-text-secondary" />
         </div>
       )}
     </div>
@@ -509,15 +563,16 @@ const Message = ({ message, token }) => {
 };
 
 const LoadingMessage = () => (
-  <div className="flex gap-4 message-enter">
+  <div className="flex gap-4">
     <div className="w-8 h-8 rounded-full bg-cerberus-dark border border-cerberus-border flex items-center justify-center shrink-0">
-      <CerberusIcon className="w-5 h-5 text-white" />
+      <Sparkles className="w-4 h-4 text-cerberus-text-secondary animate-pulse" />
     </div>
-    <div className="bg-cerberus-dark border border-cerberus-border rounded-2xl px-4 py-4">
-      <div className="flex gap-1.5">
-        <div className="w-2 h-2 bg-cerberus-text-muted rounded-full typing-dot" />
-        <div className="w-2 h-2 bg-cerberus-text-muted rounded-full typing-dot" />
-        <div className="w-2 h-2 bg-cerberus-text-muted rounded-full typing-dot" />
+    <div className="flex-1">
+      <div className="flex gap-2 items-center">
+        <div className="w-2 h-2 bg-cerberus-text-muted rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+        <div className="w-2 h-2 bg-cerberus-text-muted rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+        <div className="w-2 h-2 bg-cerberus-text-muted rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+        <span className="text-sm text-cerberus-text-muted ml-2">Gerando resposta...</span>
       </div>
     </div>
   </div>

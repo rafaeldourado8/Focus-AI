@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Key, Plus, Copy, RotateCcw, Trash2, Check, Eye, EyeOff } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
-const APIKeys = ({ token }) => {
+const APIKeys = () => {
+  const { accessToken } = useAuth();
   const [keys, setKeys] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showNewKeyModal, setShowNewKeyModal] = useState(false);
@@ -16,7 +18,7 @@ const APIKeys = ({ token }) => {
   const loadKeys = async () => {
     try {
       const response = await fetch('http://localhost:8000/api/keys/', {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 'Authorization': `Bearer ${accessToken}` }
       });
       const data = await response.json();
       setKeys(data.keys || []);
@@ -32,7 +34,7 @@ const APIKeys = ({ token }) => {
       const response = await fetch('http://localhost:8000/api/keys/', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ name: newKeyName, plan: newKeyPlan })
@@ -53,7 +55,7 @@ const APIKeys = ({ token }) => {
     try {
       await fetch(`http://localhost:8000/api/keys/${key}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 'Authorization': `Bearer ${accessToken}` }
       });
       loadKeys();
     } catch (err) {

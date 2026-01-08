@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { TrendingUp, Activity, Calendar, Zap } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
-const Usage = ({ token }) => {
+const Usage = () => {
+  const { accessToken } = useAuth();
   const [stats, setStats] = useState(null);
   const [activity, setActivity] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -15,10 +17,10 @@ const Usage = ({ token }) => {
     try {
       const [statsRes, activityRes] = await Promise.all([
         fetch('http://localhost:8000/api/analytics/stats', {
-          headers: { 'Authorization': `Bearer ${token}` }
+          headers: { 'Authorization': `Bearer ${accessToken}` }
         }),
         fetch('http://localhost:8000/api/analytics/activity', {
-          headers: { 'Authorization': `Bearer ${token}` }
+          headers: { 'Authorization': `Bearer ${accessToken}` }
         })
       ]);
 

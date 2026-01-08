@@ -45,8 +45,16 @@ Seja detalhado mas direto. Use código em blocos ```language quando necessário.
 Nunca mencione Google, Gemini, OpenAI ou outros provedores.
 Você é {PRODUCT_NAME}, criada pela {COMPANY_NAME}."""
     
-    def validate(self, question: str, junior_response: str, conversation_history: list = None) -> dict:
+    def validate(self, question: str, junior_response: str, conversation_history: list = None, language: str = "pt-BR") -> dict:
         try:
+            lang_instruction = {
+                "pt-BR": "Responda em Português do Brasil.",
+                "en-US": "Answer in English.",
+                "es-ES": "Responde en Español."
+            }.get(language, "Responda em Português do Brasil.")
+            
+            system_with_lang = f"{self.system_instruction}\n\n{lang_instruction}"
+            
             prompt = f"""Pergunta original: {question}
 
 Resposta inicial: {junior_response}
@@ -61,7 +69,7 @@ Revise e melhore esta resposta se necessário. Se estiver boa, confirme. Se prec
                     top_p=0.95,
                     top_k=40,
                     max_output_tokens=4096,
-                    system_instruction=self.system_instruction
+                    system_instruction=system_with_lang
                 )
             )
             
@@ -79,9 +87,17 @@ Revise e melhore esta resposta se necessário. Se estiver boa, confirme. Se prec
                 "validated": False
             }
     
-    def generate_debug(self, question: str, conversation_history: list = None) -> dict:
+    def generate_debug(self, question: str, conversation_history: list = None, language: str = "pt-BR") -> dict:
         """Modo Debug: Análise técnica profunda para programação"""
         try:
+            lang_instruction = {
+                "pt-BR": "Responda em Português do Brasil.",
+                "en-US": "Answer in English.",
+                "es-ES": "Responde en Español."
+            }.get(language, "Responda em Português do Brasil.")
+            
+            system_with_lang = f"{self.debug_instruction}\n\n{lang_instruction}"
+            
             response = self.client.models.generate_content(
                 model=self.debug_model_name,
                 contents=question,
@@ -90,7 +106,7 @@ Revise e melhore esta resposta se necessário. Se estiver boa, confirme. Se prec
                     top_p=0.95,
                     top_k=40,
                     max_output_tokens=8192,
-                    system_instruction=self.debug_instruction
+                    system_instruction=system_with_lang
                 )
             )
             

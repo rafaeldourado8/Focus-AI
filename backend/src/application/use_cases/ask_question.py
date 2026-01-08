@@ -21,7 +21,7 @@ class AskQuestionUseCase:
         self.cache_service = cache_service
         self.llm_service = llm_service
     
-    def execute(self, session_id: str, user_id: str, content: str, debug_mode: bool = False) -> dict:
+    def execute(self, session_id: str, user_id: str, content: str, debug_mode: bool = False, language: str = "pt-BR") -> dict:
         session = self.session_repository.get_by_id(session_id)
         if not session:
             raise ValueError("Session not found")
@@ -64,7 +64,7 @@ class AskQuestionUseCase:
             question = Question(session_id=session_id, content=content)
             created_question = self.question_repository.create(question)
             
-            llm_response = self.llm_service.generate_answer(content, debug_mode=debug_mode)
+            llm_response = self.llm_service.generate_answer(content, debug_mode=debug_mode, language=language)
             
             answer = Answer(
                 question_id=created_question.id,

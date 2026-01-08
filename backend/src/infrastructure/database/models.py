@@ -19,8 +19,12 @@ class UserModel(Base):
     email = Column(String, unique=True, nullable=False, index=True)
     password_hash = Column(String, nullable=False)
     career_stage = Column(String, nullable=True)
-    is_active = Column(Boolean, default=False, nullable=False) # Corrigido
+    is_active = Column(Boolean, default=False, nullable=False)
     activation_code = Column(String, nullable=True)
+    name = Column(String, nullable=True)
+    debug_mode = Column(Boolean, default=False)
+    language = Column(String, default="pt-BR")
+    notifications = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     
     sessions = relationship("LearningSessionModel", back_populates="user")

@@ -1,26 +1,38 @@
 import { useState, useEffect } from 'react';
 import { BarChart3, Key, Zap, TrendingUp, Clock, Code } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
-const Dashboard = ({ token }) => {
+const Dashboard = () => {
+  const { accessToken } = useAuth();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadStats();
-  }, []);
+    const interval = setInterval(loadStats, 5000);
+    return () => clearInterval(interval);
+  }, [accessToken]);
 
   const loadStats = async () => {
+    if (!accessToken) return;
+    
     try {
-      const response = await fetch('http://localhost:8000/api/sessions/', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await response.json();
+      const [sessionsRes, keysRes] = await Promise.all([
+        fetch('http://localhost:8000/api/sessions/', {
+          headers: { 'Authorization': `Bearer ${accessToken}` }
+        }),
+        fetch('http://localhost:8000/api/keys/', {
+          headers: { 'Authorization': `Bearer ${accessToken}` }
+        })
+      ]);
       
-      // Mock stats - substituir por endpoint real
+      const sessionsData = await sessionsRes.json();
+      const keysData = await keysRes.json();
+      
       setStats({
-        totalSessions: data.sessions?.length || 0,
-        totalQuestions: data.sessions?.reduce((acc, s) => acc + (s.question_count || 0), 0) || 0,
-        apiKeys: 0,
+        totalSessions: sessionsData.sessions?.length || 0,
+        totalQuestions: sessionsData.sessions?.reduce((acc, s) => acc + (s.message_count || 0), 0) || 0,
+        apiKeys: keysData.keys?.length || 0,
         avgResponseTime: '1.2s'
       });
     } catch (err) {

@@ -1,0 +1,115 @@
+{
+  "info": {
+    "name": "Cerberus AI - Public API",
+    "description": "Collection para testar API pública do Cerberus AI",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "api_key",
+      "value": "your-api-key-here",
+      "type": "string"
+    },
+    {
+      "key": "session_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Chat Completion",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"model\": \"cerberus-pro\",\n  \"messages\": [\n    {\"role\": \"user\", \"content\": \"Como implementar JWT em FastAPI?\"}\n  ],\n  \"debug_mode\": false\n}"
+        },
+        "url": "{{base_url}}/v1/chat/completions"
+      }
+    },
+    {
+      "name": "2. Code Analyze",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"code\": \"def hello():\\n    print('hello')\",\n  \"language\": \"python\",\n  \"checks\": [\"security\", \"performance\"]\n}"
+        },
+        "url": "{{base_url}}/v1/code/analyze"
+      }
+    },
+    {
+      "name": "3. Code Debug",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"error\": \"NullPointerException\",\n  \"code\": \"String s = null;\\ns.length();\",\n  \"language\": \"java\"\n}"
+        },
+        "url": "{{base_url}}/v1/code/debug"
+      }
+    },
+    {
+      "name": "4. List Models",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}"
+          }
+        ],
+        "url": "{{base_url}}/v1/models"
+      }
+    },
+    {
+      "name": "5. Get Usage",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{api_key}}"
+          }
+        ],
+        "url": "{{base_url}}/v1/usage"
+      }
+    }
+  ]
+}

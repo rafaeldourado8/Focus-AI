@@ -71,6 +71,16 @@ async def ask_question(
     db: Session = Depends(get_db)
 ):
     try:
+        from src.infrastructure.database.models import UserModel
+        
+        # Busca configurações do usuário
+        user = db.query(UserModel).filter(UserModel.id == user_id).first()
+        user_language = user.language if user else "pt-BR"
+        user_debug_mode = user.debug_mode if user else False
+        
+        # Debug mode: request override ou configuração do usuário
+        debug_mode = request.debug_mode or user_debug_mode
+        
         session_repo = SessionRepository(db)
         question_repo = QuestionRepository(db)
         answer_repo = AnswerRepository(db)
@@ -85,7 +95,7 @@ async def ask_question(
             llm_service
         )
         
-        result = use_case.execute(session_id, user_id, request.content, request.debug_mode)
+        result = use_case.execute(session_id, user_id, request.content, debug_mode, user_language)
         
         return AnswerResponse(
             content=result["content"],

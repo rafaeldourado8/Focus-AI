@@ -35,5 +35,9 @@ class UserRepository:
             career_stage=db_user.career_stage,
             is_active=db_user.is_active,
             activation_code=db_user.activation_code,
-            created_at=db_user.created_at
+            created_at=db_user.created_at,
+            name=db_user.name,
+            debug_mode=db_user.debug_mode,
+            language=db_user.language,
+            notifications=db_user.notifications
         )
