@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 from sqlalchemy.orm import Session
 from src.domain.qa import Question, Answer
 from src.infrastructure.database.models import QuestionModel, AnswerModel
@@ -22,18 +22,20 @@ class QuestionRepository:
             created_at=db_question.created_at
         )
     
-    def get_by_id(self, question_id: str) -> Optional[Question]:
-        db_question = self.db.query(QuestionModel).filter(
-            QuestionModel.id == question_id
-        ).first()
-        if not db_question:
-            return None
-        return Question(
-            id=db_question.id,
-            session_id=db_question.session_id,
-            content=db_question.content,
-            created_at=db_question.created_at
-        )
+    def get_by_session(self, session_id: str) -> List[Question]:
+        """Busca todas as perguntas de uma sessão"""
+        db_questions = self.db.query(QuestionModel).filter(
+            QuestionModel.session_id == session_id
+        ).order_by(QuestionModel.created_at).all()
+        
+        return [
+            Question(
+                id=q.id,
+                session_id=q.session_id,
+                content=q.content,
+                created_at=q.created_at
+            ) for q in db_questions
+        ]
 
 class AnswerRepository:
     def __init__(self, db: Session):

@@ -4,6 +4,7 @@ from functools import lru_cache
 class Settings(BaseSettings):
     DATABASE_URL: str
     REDIS_URL: str
+    RABBITMQ_URL: str
     JWT_SECRET: str
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRATION_MINUTES: int = 3
