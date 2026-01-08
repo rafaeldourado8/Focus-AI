@@ -1,0 +1,355 @@
+openapi: 3.0.0
+info:
+  title: Cerberus AI API
+  description: Developer LLM & Code Assistant - Public API
+  version: 1.0.0
+  contact:
+    name: Focus AI
+    url: https://cerberus-ai.com
+    email: support@cerberus-ai.com
+
+servers:
+  - url: http://localhost:8000
+    description: Local development
+  - url: https://api.cerberus-ai.com
+    description: Production
+
+security:
+  - BearerAuth: []
+
+paths:
+  /v1/chat/completions:
+    post:
+      summary: Create chat completion
+      description: OpenAI-compatible chat completions endpoint
+      tags:
+        - Chat
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatCompletionRequest'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatCompletionResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimitExceeded'
+
+  /v1/code/analyze:
+    post:
+      summary: Analyze code
+      description: Analyze code for security, performance, and style issues
+      tags:
+        - Code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CodeAnalyzeRequest'
+      responses:
+        '200':
+          description: Analysis results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  analysis:
+                    type: string
+                  model:
+                    type: string
+
+  /v1/code/debug:
+    post:
+      summary: Debug code
+      description: Get debug information and solutions for code errors
+      tags:
+        - Code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CodeDebugRequest'
+      responses:
+        '200':
+          description: Debug information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  debug_info:
+                    type: string
+                  model:
+                    type: string
+
+  /v1/code/refactor:
+    post:
+      summary: Refactor code
+      description: Get refactored code with improvements
+      tags:
+        - Code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CodeRefactorRequest'
+      responses:
+        '200':
+          description: Refactored code
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  refactored:
+                    type: string
+                  model:
+                    type: string
+
+  /v1/models:
+    get:
+      summary: List models
+      description: Get list of available models
+      tags:
+        - Models
+      responses:
+        '200':
+          description: List of models
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  models:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ModelInfo'
+
+  /v1/usage:
+    get:
+      summary: Get usage statistics
+      description: Get API key usage statistics
+      tags:
+        - Usage
+      responses:
+        '200':
+          description: Usage statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsageStats'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: API Key
+      description: Use your API key as Bearer token
+
+  schemas:
+    ChatCompletionRequest:
+      type: object
+      required:
+        - messages
+      properties:
+        model:
+          type: string
+          default: cerberus-pro
+          enum: [cerberus-lite, cerberus-pro, cerberus-debug]
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/Message'
+        temperature:
+          type: number
+          minimum: 0
+          maximum: 1
+          default: 0.7
+        max_tokens:
+          type: integer
+          default: 2048
+        debug_mode:
+          type: boolean
+          default: false
+
+    Message:
+      type: object
+      required:
+        - role
+        - content
+      properties:
+        role:
+          type: string
+          enum: [system, user, assistant]
+        content:
+          type: string
+
+    ChatCompletionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        object:
+          type: string
+        created:
+          type: integer
+        model:
+          type: string
+        choices:
+          type: array
+          items:
+            type: object
+            properties:
+              index:
+                type: integer
+              message:
+                $ref: '#/components/schemas/Message'
+              finish_reason:
+                type: string
+        usage:
+          type: object
+          properties:
+            prompt_tokens:
+              type: integer
+            completion_tokens:
+              type: integer
+            total_tokens:
+              type: integer
+        metadata:
+          type: object
+
+    CodeAnalyzeRequest:
+      type: object
+      required:
+        - code
+        - language
+      properties:
+        code:
+          type: string
+        language:
+          type: string
+        checks:
+          type: array
+          items:
+            type: string
+          default: [security, performance, style]
+
+    CodeDebugRequest:
+      type: object
+      required:
+        - error
+        - code
+        - language
+      properties:
+        error:
+          type: string
+        code:
+          type: string
+        language:
+          type: string
+        context:
+          type: string
+
+    CodeRefactorRequest:
+      type: object
+      required:
+        - code
+        - language
+      properties:
+        code:
+          type: string
+        language:
+          type: string
+        goals:
+          type: array
+          items:
+            type: string
+          default: [readability, maintainability]
+
+    ModelInfo:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        max_tokens:
+          type: integer
+        cost_per_1k_tokens:
+          type: number
+        available_in:
+          type: array
+          items:
+            type: string
+
+    UsageStats:
+      type: object
+      properties:
+        key:
+          type: string
+        plan:
+          type: string
+        total_requests:
+          type: integer
+        rate_limit:
+          type: integer
+        daily_limit:
+          type: integer
+
+  responses:
+    Unauthorized:
+      description: Invalid or missing API key
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  message:
+                    type: string
+
+    RateLimitExceeded:
+      description: Rate limit exceeded
+      headers:
+        X-RateLimit-Limit:
+          schema:
+            type: integer
+        X-RateLimit-Remaining:
+          schema:
+            type: integer
+        X-RateLimit-Reset:
+          schema:
+            type: integer
+        Retry-After:
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: object
+                properties:
+                  type:
+                    type: string
+                  message:
+                    type: string

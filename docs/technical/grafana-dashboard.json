@@ -1,0 +1,95 @@
+{
+  "dashboard": {
+    "title": "Cerberus AI - Metrics Dashboard",
+    "tags": ["cerberus", "llm", "monitoring"],
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Request Rate",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(cerberus_requests_total[5m])",
+            "legendFormat": "{{model}} - {{status}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+      },
+      {
+        "id": 2,
+        "title": "Request Duration (p95)",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(cerberus_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "{{model}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
+      },
+      {
+        "id": 3,
+        "title": "Cache Hit Rate",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "rate(cerberus_cache_hits_total[5m]) / (rate(cerberus_cache_hits_total[5m]) + rate(cerberus_cache_misses_total[5m])) * 100"
+          }
+        ],
+        "gridPos": {"h": 4, "w": 6, "x": 0, "y": 8}
+      },
+      {
+        "id": 4,
+        "title": "Total Cost (USD)",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "cerberus_total_cost_usd"
+          }
+        ],
+        "gridPos": {"h": 4, "w": 6, "x": 6, "y": 8}
+      },
+      {
+        "id": 5,
+        "title": "Model Usage Distribution",
+        "type": "piechart",
+        "targets": [
+          {
+            "expr": "cerberus_model_usage_total",
+            "legendFormat": "{{model}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8}
+      },
+      {
+        "id": 6,
+        "title": "Error Rate",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(cerberus_errors_total[5m])",
+            "legendFormat": "{{error_type}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 12}
+      },
+      {
+        "id": 7,
+        "title": "Active Sessions",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "cerberus_active_sessions"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 12}
+      }
+    ],
+    "refresh": "10s",
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    }
+  }
+}

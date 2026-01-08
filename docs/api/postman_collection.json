@@ -1,0 +1,159 @@
+{
+  "info": {
+    "name": "Cerberus AI API",
+    "description": "Developer LLM & Code Assistant - Public API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{CERBERUS_API_KEY}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "BASE_URL",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "CERBERUS_API_KEY",
+      "value": "ck_live_your_api_key_here",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Chat",
+      "item": [
+        {
+          "name": "Chat Completion",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"model\": \"cerberus-pro\",\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": \"Explain async/await in Python\"\n    }\n  ],\n  \"temperature\": 0.7,\n  \"max_tokens\": 2048,\n  \"debug_mode\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/v1/chat/completions",
+              "host": ["{{BASE_URL}}"],
+              "path": ["v1", "chat", "completions"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Code",
+      "item": [
+        {
+          "name": "Analyze Code",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"def foo():\\n    x = 1\\n    return x\",\n  \"language\": \"python\",\n  \"checks\": [\"security\", \"performance\", \"style\"]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/v1/code/analyze",
+              "host": ["{{BASE_URL}}"],
+              "path": ["v1", "code", "analyze"]
+            }
+          }
+        },
+        {
+          "name": "Debug Code",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"error\": \"TypeError: cannot read property 'map' of undefined\",\n  \"code\": \"const items = data.items;\\nconst names = items.map(i => i.name);\",\n  \"language\": \"javascript\",\n  \"context\": \"React component fetching API data\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/v1/code/debug",
+              "host": ["{{BASE_URL}}"],
+              "path": ["v1", "code", "debug"]
+            }
+          }
+        },
+        {
+          "name": "Refactor Code",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"function calc(a,b,op){if(op=='add')return a+b;if(op=='sub')return a-b;}\",\n  \"language\": \"javascript\",\n  \"goals\": [\"readability\", \"maintainability\"]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/v1/code/refactor",
+              "host": ["{{BASE_URL}}"],
+              "path": ["v1", "code", "refactor"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Models",
+      "item": [
+        {
+          "name": "List Models",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/models",
+              "host": ["{{BASE_URL}}"],
+              "path": ["v1", "models"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Usage",
+      "item": [
+        {
+          "name": "Get Usage Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/v1/usage",
+              "host": ["{{BASE_URL}}"],
+              "path": ["v1", "usage"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
