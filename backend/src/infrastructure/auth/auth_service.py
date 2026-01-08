@@ -3,10 +3,13 @@ from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from typing import Optional
 from src.config import get_settings
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPBearer
 import re
 
 settings = get_settings()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+security = HTTPBearer()
 
 class AuthService:
     @staticmethod
@@ -44,3 +47,18 @@ class AuthService:
             return user_id
         except JWTError:
             return None
+
+
+async def get_current_user(credentials = Depends(security)):
+    """Dependency to get current authenticated user"""
+    token = credentials.credentials
+    user_id = AuthService.verify_token(token)
+    
+    if not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    return {"user_id": user_id}

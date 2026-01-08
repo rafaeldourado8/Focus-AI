@@ -24,8 +24,10 @@ class SessionResponse(BaseModel):
 
 class AnswerResponse(BaseModel):
     content: str
+    answer_id: str
     model: str = "gemini"
     used_senior: bool = False
+    thinking_process: list = []  # Para "visualizar pensamento"
 
 @router.post("/", response_model=SessionResponse)
 async def create_session(user_id: str = Depends(verify_token), db: Session = Depends(get_db)):
@@ -87,8 +89,10 @@ async def ask_question(
         
         return AnswerResponse(
             content=result["content"],
+            answer_id=result.get("answer_id", ""),
             model=result.get("model", "gemini"),
-            used_senior=result.get("used_senior", False)
+            used_senior=result.get("used_senior", False),
+            thinking_process=result.get("thinking_process", [])
         )
     except ValueError as e:
         if "Unauthorized" in str(e):

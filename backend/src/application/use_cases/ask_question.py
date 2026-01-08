@@ -49,8 +49,10 @@ class AskQuestionUseCase:
             
             return {
                 "content": created_answer.content,
+                "answer_id": created_answer.id,
                 "model": cached_answer.get("model", "cached"),
-                "used_senior": cached_answer.get("used_senior", False)
+                "used_senior": cached_answer.get("used_senior", False),
+                "thinking_process": []
             }
         
         if not self.cache_service.acquire_lock(session_id, ttl=180):
@@ -78,13 +80,62 @@ class AskQuestionUseCase:
                 "used_senior": llm_response["used_senior"]
             })
             
+            # Gerar processo de pensamento
+            thinking_process = self._generate_thinking_process(content, llm_response)
+            
             self.session_repository.update_status(session_id, SessionStatus.ACTIVE)
             
             return {
                 "content": created_answer.content,
+                "answer_id": created_answer.id,
                 "model": llm_response["model"],
-                "used_senior": llm_response["used_senior"]
+                "used_senior": llm_response["used_senior"],
+                "thinking_process": thinking_process
             }
         
         finally:
             self.cache_service.release_lock(session_id)
+    
+    def _generate_thinking_process(self, question: str, llm_response: dict) -> list:
+        """Gera processo de pensamento estilo Gemini"""
+        steps = []
+        
+        # Análise da pergunta
+        steps.append({
+            "step": "Analisando pergunta",
+            "description": f"Identificando contexto e requisitos técnicos",
+            "status": "completed"
+        })
+        
+        # Escolha do modelo
+        model_name = "Cerberus Lite" if "lite" in llm_response.get("model", "").lower() else "Cerberus Pro"
+        steps.append({
+            "step": "Selecionando modelo",
+            "description": f"Usando {model_name} para esta resposta",
+            "status": "completed"
+        })
+        
+        # Busca de contexto (se RAG estiver ativo)
+        if llm_response.get("used_rag", False):
+            steps.append({
+                "step": "Buscando contexto",
+                "description": "Consultando base de conhecimento técnico",
+                "status": "completed"
+            })
+        
+        # Geração da resposta
+        steps.append({
+            "step": "Gerando resposta",
+            "description": "Processando informações e criando solução",
+            "status": "completed"
+        })
+        
+        # Validação (se Senior foi usado)
+        if llm_response.get("used_senior", False):
+            steps.append({
+                "step": "Validando qualidade",
+                "description": "Revisão técnica com modelo avançado",
+                "status": "completed"
+            })
+        
+        return steps

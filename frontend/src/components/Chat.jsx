@@ -2,11 +2,13 @@ import { useState, useRef, useEffect } from 'react';
 import { Send, Menu, LogOut, Copy, Check, User, RotateCcw, Sparkles, Bug, ArrowLeft, ThumbsUp, ThumbsDown } from 'lucide-react';
 import CerberusIcon from './CerberusIcon';
 import Sidebar from './Sidebar';
+import ThinkingProcess from './ThinkingProcess';
 
 const Chat = ({ token, onLogout, onNavigate }) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [thinkingSteps, setThinkingSteps] = useState([]);
   const [sessionId, setSessionId] = useState(null);
   const [sessions, setSessions] = useState([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -107,11 +109,16 @@ const Chat = ({ token, onLogout, onNavigate }) => {
 
       const data = await response.json();
       
+      setThinkingSteps(data.thinking_process || []);
+      
       setMessages(prev => [...prev, {
         role: 'assistant',
         content: data.content,
-        answerId: data.answer_id  // Store answer ID for feedback
+        answerId: data.answer_id,
+        thinkingProcess: data.thinking_process || []
       }]);
+      
+      setThinkingSteps([]);
 
       // Update session title with first message
       if (messages.length === 0) {
@@ -229,7 +236,12 @@ const Chat = ({ token, onLogout, onNavigate }) => {
                 {messages.map((msg, idx) => (
                   <Message key={idx} message={msg} token={token} />
                 ))}
-                {loading && <LoadingMessage />}
+                {loading && (
+                  <>
+                    <ThinkingProcess steps={thinkingSteps} isThinking={true} />
+                    <LoadingMessage />
+                  </>
+                )}
                 <div ref={messagesEndRef} />
               </div>
             </div>
@@ -322,6 +334,7 @@ const Message = ({ message, token }) => {
   const isError = message.role === 'error';
   const [copied, setCopied] = useState(false);
   const [feedback, setFeedback] = useState(null);
+  const [showThinking, setShowThinking] = useState(false);
 
   const handleFeedback = async (rating) => {
     if (!message.answerId) return;
@@ -408,6 +421,21 @@ const Message = ({ message, token }) => {
       )}
       
       <div className={`flex-1 max-w-[85%] ${isUser ? 'flex justify-end' : ''}`}>
+        {!isUser && message.thinkingProcess && message.thinkingProcess.length > 0 && (
+          <button
+            onClick={() => setShowThinking(!showThinking)}
+            className="text-xs text-cerberus-text-muted hover:text-white mb-2 flex items-center gap-1"
+          >
+            {showThinking ? '▼' : '▶'} Ver processo de raciocínio
+          </button>
+        )}
+        
+        {showThinking && message.thinkingProcess && (
+          <div className="mb-3">
+            <ThinkingProcess steps={message.thinkingProcess} isThinking={false} />
+          </div>
+        )}
+        
         <div className={`inline-block rounded-2xl px-4 py-3 ${
           isUser 
             ? 'bg-white text-black' 
