@@ -1,13 +1,23 @@
 import { useState, useEffect } from 'react';
 import Login from './components/Login';
+import Layout from './components/Layout';
+import Dashboard from './components/Dashboard';
 import Chat from './components/Chat';
+import APIKeys from './components/APIKeys';
+import Usage from './components/Usage';
+import Settings from './components/Settings';
 
 const App = () => {
   const [token, setToken] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState('dashboard');
 
   useEffect(() => {
     const savedToken = localStorage.getItem('token');
-    if (savedToken) setToken(savedToken);
+    if (savedToken) {
+      setToken(savedToken);
+    }
+    setIsLoading(false);
   }, []);
 
   const handleLogin = (newToken) => {
@@ -19,11 +29,35 @@ const App = () => {
     setToken(null);
   };
 
+  const handleNavigate = (page) => {
+    setCurrentPage(page);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-2 border-cerberus-border border-t-white rounded-full" />
+      </div>
+    );
+  }
+
   if (!token) {
     return <Login onLogin={handleLogin} />;
   }
 
-  return <Chat token={token} onLogout={handleLogout} />;
+  // Render page without Layout for Chat (has its own layout)
+  if (currentPage === 'chat') {
+    return <Chat token={token} onLogout={handleLogout} onNavigate={handleNavigate} />;
+  }
+
+  return (
+    <Layout currentPage={currentPage} onNavigate={handleNavigate} onLogout={handleLogout}>
+      {currentPage === 'dashboard' && <Dashboard token={token} />}
+      {currentPage === 'api-keys' && <APIKeys token={token} />}
+      {currentPage === 'usage' && <Usage token={token} />}
+      {currentPage === 'settings' && <Settings token={token} />}
+    </Layout>
+  );
 };
 
 export default App;
