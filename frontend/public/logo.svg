@@ -1,0 +1,19 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <!-- Cabeça Central (Principal) -->
+  <circle cx="32" cy="20" r="8" fill="#ffffff" stroke="#ef4444" stroke-width="1.5"/>
+  <circle cx="32" cy="19" r="2" fill="#ef4444"/>
+  
+  <!-- Cabeça Esquerda -->
+  <circle cx="18" cy="26" r="6.5" fill="#ffffff" opacity="0.85" stroke="#ef4444" stroke-width="1.2"/>
+  <circle cx="18" cy="25.5" r="1.5" fill="#ef4444"/>
+  
+  <!-- Cabeça Direita -->
+  <circle cx="46" cy="26" r="6.5" fill="#ffffff" opacity="0.85" stroke="#ef4444" stroke-width="1.2"/>
+  <circle cx="46" cy="25.5" r="1.5" fill="#ef4444"/>
+  
+  <!-- Corpo/Base -->
+  <path d="M 20 32 Q 32 38 44 32" stroke="#ffffff" stroke-width="2" fill="none" opacity="0.6"/>
+  
+  <!-- Detalhes (dentes/guarda) -->
+  <path d="M 28 36 L 32 40 L 36 36" stroke="#ef4444" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+</svg>
