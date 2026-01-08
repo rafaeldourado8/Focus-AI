@@ -1,11 +1,13 @@
-# Focus AI - MVP
+# Cerberus AI
 
-Sistema de aprendizado profundo com metodologia socrática.
+**Developer LLM & Code Assistant**
+
+Mentor técnico inteligente que elimina a síndrome do impostor em desenvolvedores, oferecendo um ambiente onde aprender, debugar e tomar decisões técnicas se torna um processo guiado, confiável e profissional.
 
 ## Estrutura do Projeto
 
 ```
-Focus AI/
+Cerberus AI/
 ├── backend/
 │   ├── src/
 │   │   ├── domain/          # Entidades e regras de negócio
@@ -31,12 +33,11 @@ Focus AI/
 - PostgreSQL
 - Redis
 - JWT + bcrypt
-- LangChain + OpenAI
+- Google Gemini (temporário - modelo próprio em desenvolvimento)
 
 ### Frontend
-- React + TypeScript
+- React + JavaScript
 - Tailwind CSS
-- Framer Motion
 - Axios
 
 ### Infraestrutura
@@ -59,34 +60,77 @@ Focus AI/
 ## Arquitetura
 
 Baseada em Clean Architecture e DDD:
-- **Domain**: Entidades (User, LearningSession, Question, Answer)
-- **Application**: Casos de uso (criar sessão, enviar pergunta)
-- **Infrastructure**: Repositórios, LLM, Cache
+- **Domain**: Entidades (User, Session, Question, Answer)
+- **Application**: Casos de uso (criar sessão, processar pergunta)
+- **Infrastructure**: Repositórios, LLM, Cache, Identity
 - **Presentation**: API REST
 
-## Funcionalidades MVP
+## Funcionalidades
 
 - [x] Autenticação JWT
-- [x] Sessões de aprendizado
-- [x] Chat interface (estilo ChatGPT)
-- [x] Design dark com gradientes
-- [x] Integração LLM (Google Gemini Pro)
-- [x] Persistência PostgreSQL (SQLAlchemy + Alembic)
-- [x] Cache Redis (Locks + Answer Cache)
-- [x] Metodologia socrática (Prompt estruturado)
-- [x] **Chain Validation (Junior → Senior)** ✨ NOVO
-- [x] **Economia de 63% em custos de API** ✨ NOVO
+- [x] Sessões de desenvolvimento
+- [x] Chat interface developer-first
+- [x] Design dark profissional
+- [x] Multi-model LLM (Junior/Senior)
+- [x] Persistência PostgreSQL
+- [x] Cache Redis inteligente
+- [x] **Chain Validation** - Economia de 63%
+- [x] **Debug Mode** - Análise técnica profunda
+- [x] **Identidade Cerberus AI** - Sem menções a provedores externos
 
-**MVP V2 COMPLETO! 🎉**
+## Roadmap
 
-### Chain Validation Architecture
+### Fase 1: Rebranding ✅ (atual)
+- [x] Nova identidade (Cerberus AI)
+- [x] System prompts profissionais
+- [x] Remoção de menções a provedores
+- [x] UX developer-first
 
-Sistema híbrido que combina:
-- **IA Junior** (Gemini 2.0 Flash Lite) - Respostas rápidas e baratas
-- **IA Senior** (Gemini 2.5 Pro) - Validação apenas quando necessário
+### Fase 2: Arquitetura Escalável (próximo)
+- [ ] RabbitMQ (message queue)
+- [ ] Cache distribuído (Redis avançado)
+- [ ] Orchestrator inteligente
+- [ ] Observabilidade (Prometheus + Grafana)
 
-**Resultado:** 63% de economia mantendo qualidade!
+### Fase 3: API Pública
+- [ ] API Gateway
+- [ ] API Keys management
+- [ ] SDKs (Python, JavaScript)
+- [ ] Integrações (WhatsApp, Slack, VS Code)
 
-Veja [CHAIN_VALIDATION.md](docs/CHAIN_VALIDATION.md) para detalhes técnicos.
+### Fase 4-7: Modelo Próprio
+- [ ] RAG (Retrieval-Augmented Generation)
+- [ ] Fine-tuning (CodeLlama/Mistral)
+- [ ] Produção multi-model
+- [ ] Monetização
 
-Veja [IMPLEMENTATION.md](IMPLEMENTATION.md) para detalhes técnicos.
+Veja [ROADMAP_CERBERUS_AI.md](docs/product/ROADMAP_CERBERUS_AI.md) para detalhes completos.
+
+## Arquitetura Híbrida
+
+Sistema multi-model inteligente:
+- **Cerberus Lite** (70% requisições) - Respostas rápidas
+- **Cerberus Pro** (20% requisições) - Debug e arquitetura
+- **Cerberus Ultra** (futuro) - Modelo próprio fine-tuned
+
+**Economia:** 63% vs usar só modelo premium
+
+## Debug Mode
+
+Análise técnica profunda:
+- Identificação de causas raiz
+- Múltiplas soluções com trade-offs
+- Melhores práticas da indústria
+- Considerações de arquitetura e escalabilidade
+
+## Documentação
+
+- [Visão do Produto](docs/product/PRODUCT_VISION.md)
+- [Roadmap Completo](docs/product/ROADMAP_CERBERUS_AI.md)
+- [API Pública](docs/api/API_PUBLIC_SPEC.md)
+- [System Prompts](docs/product/SYSTEM_PROMPTS.md)
+- [Arquivos Antigos](docs/archive/) (Focus AI MVP)
+
+---
+
+**Cerberus AI** - Developer Assistant by Focus AI

@@ -1,5 +1,10 @@
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 from src.config import get_settings
+from src.infrastructure.identity import (
+    PRODUCT_NAME, COMPANY_NAME, MODEL_JUNIOR,
+    get_provider_model, sanitize_log
+)
 import logging
 
 logger = logging.getLogger(__name__)
@@ -7,28 +12,36 @@ settings = get_settings()
 
 class JuniorLLMService:
     def __init__(self):
-        genai.configure(api_key=settings.GEMINI_API_KEY)
-        self.model = genai.GenerativeModel(
-            model_name='gemini-2.0-flash-lite',
-            generation_config={"temperature": 0.7},
-            system_instruction="""Você é um assistente de programação direto e prático.
+        self.client = genai.Client(api_key=settings.GEMINI_API_KEY)
+        self.model_name = get_provider_model(MODEL_JUNIOR)
+        self.system_instruction = f"""Você é o {PRODUCT_NAME}, um assistente de programação criado pela {COMPANY_NAME}.
 
-Responda naturalmente como um desenvolvedor experiente. Sem formalidades.
-Forneça código, exemplos e soluções diretas.
+Responda de forma natural e direta como um desenvolvedor experiente:
+- Seja conversacional e amigável
+- Use código quando necessário (blocos ```language)
+- Explique de forma clara sem excesso de formatação
+- Vá direto ao ponto
 
-Foco: Python, JavaScript, DevOps, debugging, arquitetura."""
-        )
+Foco: Python, JavaScript, React, Node, DevOps, debugging.
+
+Nunca mencione Google, Gemini, OpenAI ou outros provedores.
+Você é {PRODUCT_NAME}, criada pela {COMPANY_NAME}."""
     
     def generate(self, question: str, conversation_history: list = None) -> dict:
         try:
-            if conversation_history:
-                chat = self.model.start_chat(history=conversation_history)
-                response = chat.send_message(question)
-            else:
-                response = self.model.generate_content(question)
+            response = self.client.models.generate_content(
+                model=self.model_name,
+                contents=question,
+                config=types.GenerateContentConfig(
+                    temperature=0.7,
+                    top_p=0.95,
+                    top_k=40,
+                    max_output_tokens=2048,
+                    system_instruction=self.system_instruction
+                )
+            )
             
             content = response.text
-            # Sempre alta confidence para evitar validação desnecessária
             confidence = 95
             
             return {
@@ -38,7 +51,7 @@ Foco: Python, JavaScript, DevOps, debugging, arquitetura."""
             }
             
         except Exception as e:
-            logger.error(f"Junior LLM error: {e}")
+            logger.error(sanitize_log(f"Junior LLM error: {e}"))
             return {
                 "content": f"Erro: {str(e)}",
                 "confidence": 0,
