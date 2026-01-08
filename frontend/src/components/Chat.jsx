@@ -13,16 +13,25 @@ const Chat = ({ token, onLogout, onNavigate }) => {
   const [sessions, setSessions] = useState([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [debugMode, setDebugMode] = useState(false);
+  const [autoScroll, setAutoScroll] = useState(true);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const messagesContainerRef = useRef(null);
 
   useEffect(() => {
     loadSessions();
+    const savedSessionId = localStorage.getItem('sessionId');
+    if (savedSessionId) {
+      setSessionId(savedSessionId);
+      loadSessionHistory(savedSessionId);
+    }
   }, []);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    if (autoScroll) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, autoScroll]);
 
   useEffect(() => {
     // Focus input on load
@@ -35,8 +44,10 @@ const Chat = ({ token, onLogout, onNavigate }) => {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
+      if (!response.ok) throw new Error('Erro ao criar sessão');
       const data = await response.json();
       setSessionId(data.session_id);
+      localStorage.setItem('sessionId', data.session_id);
       setMessages([]);
       loadSessions();
     } catch (err) {
@@ -144,6 +155,7 @@ const Chat = ({ token, onLogout, onNavigate }) => {
 
   const handleSelectSession = async (id) => {
     setSessionId(id);
+    localStorage.setItem('sessionId', id);
     setSidebarOpen(false);
     await loadSessionHistory(id);
   };
@@ -227,7 +239,15 @@ const Chat = ({ token, onLogout, onNavigate }) => {
         </header>
 
         {/* Messages Area */}
-        <main className="flex-1 overflow-y-auto">
+        <main 
+          ref={messagesContainerRef}
+          className="flex-1 overflow-y-auto"
+          onScroll={(e) => {
+            const { scrollTop, scrollHeight, clientHeight } = e.target;
+            const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
+            setAutoScroll(isNearBottom);
+          }}
+        >
           {messages.length === 0 ? (
             <EmptyState />
           ) : (

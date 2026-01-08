@@ -4,12 +4,8 @@ import react from '@vitejs/plugin-react'
 export default defineConfig(({ mode }) => ({
   plugins: [react()],
   server: {
-    host: true, 
-    strictPort: true,
-    port: 5173,
-    watch: {
-      usePolling: true,
-    },
+    port: 3000,
+    host: true
   },
   build: {
     sourcemap: mode !== 'production',

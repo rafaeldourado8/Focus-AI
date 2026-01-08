@@ -33,7 +33,10 @@ const Dashboard = ({ token }) => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="text-cerberus-text-secondary">Carregando...</div>
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin w-8 h-8 border-2 border-cerberus-border border-t-white rounded-full" />
+          <div className="text-cerberus-text-secondary text-sm">Carregando dashboard...</div>
+        </div>
       </div>
     );
   }
@@ -48,18 +51,21 @@ const Dashboard = ({ token }) => {
           label="Sessões"
           value={stats.totalSessions}
           color="blue"
+          isEmpty={stats.totalSessions === 0}
         />
         <StatCard
           icon={<Code className="w-6 h-6" />}
           label="Perguntas"
           value={stats.totalQuestions}
           color="green"
+          isEmpty={stats.totalQuestions === 0}
         />
         <StatCard
           icon={<Key className="w-6 h-6" />}
           label="API Keys"
           value={stats.apiKeys}
           color="purple"
+          isEmpty={stats.apiKeys === 0}
         />
         <StatCard
           icon={<Clock className="w-6 h-6" />}
@@ -96,7 +102,7 @@ const Dashboard = ({ token }) => {
   );
 };
 
-const StatCard = ({ icon, label, value, color }) => {
+const StatCard = ({ icon, label, value, color, isEmpty }) => {
   const colors = {
     blue: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
     green: 'text-green-400 bg-green-500/10 border-green-500/20',
@@ -105,12 +111,18 @@ const StatCard = ({ icon, label, value, color }) => {
   };
 
   return (
-    <div className="bg-cerberus-dark border border-cerberus-border rounded-xl p-6">
-      <div className={`w-12 h-12 rounded-lg ${colors[color]} flex items-center justify-center mb-4`}>
+    <div className="bg-cerberus-dark border border-cerberus-border rounded-xl p-6 relative overflow-hidden">
+      {isEmpty && (
+        <div className="absolute inset-0 bg-gradient-to-br from-cerberus-dark via-transparent to-transparent opacity-50" />
+      )}
+      <div className={`w-12 h-12 rounded-lg ${colors[color]} flex items-center justify-center mb-4 relative z-10`}>
         {icon}
       </div>
-      <div className="text-2xl font-bold text-white mb-1">{value}</div>
-      <div className="text-sm text-cerberus-text-secondary">{label}</div>
+      <div className="text-2xl font-bold text-white mb-1 relative z-10">{value}</div>
+      <div className="text-sm text-cerberus-text-secondary relative z-10">{label}</div>
+      {isEmpty && (
+        <div className="text-xs text-cerberus-text-muted mt-2 relative z-10">Comece sua jornada!</div>
+      )}
     </div>
   );
 };

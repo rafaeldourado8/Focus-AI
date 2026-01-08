@@ -10,12 +10,54 @@
     <title>Cerberus AI - Developer Assistant</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <style>
-      /* Prevent FOUC */
-      html { background: #000; }
+      /* Prevent FOUC & Loading Screen */
+      html, body { 
+        margin: 0;
+        padding: 0;
+        background: #000; 
+        overflow: hidden;
+      }
+      #loading-screen {
+        position: fixed;
+        inset: 0;
+        background: #000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        transition: opacity 0.3s ease-out;
+      }
+      #loading-screen.hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+      .loader {
+        width: 48px;
+        height: 48px;
+        border: 3px solid #1a1a1a;
+        border-top-color: #fff;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
     </style>
   </head>
   <body>
+    <div id="loading-screen">
+      <div class="loader"></div>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+    <script>
+      // Hide loading screen when React mounts
+      window.addEventListener('load', () => {
+        setTimeout(() => {
+          document.getElementById('loading-screen').classList.add('hidden');
+          document.body.style.overflow = 'auto';
+        }, 300);
+      });
+    </script>
   </body>
 </html>
