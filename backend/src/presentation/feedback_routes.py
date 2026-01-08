@@ -6,6 +6,7 @@ User feedback on answers
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 from pydantic import BaseModel
 from src.infrastructure.database.connection import get_db
 from src.infrastructure.auth.auth_service import get_current_user
@@ -54,10 +55,10 @@ async def submit_feedback(
     # Create feedback (simple insert - no entity for now)
     feedback_id = str(uuid.uuid4())
     db.execute(
-        """
+        text("""
         INSERT INTO answer_feedback (id, answer_id, rating, comment, created_at)
         VALUES (:id, :answer_id, :rating, :comment, :created_at)
-        """,
+        """),
         {
             "id": feedback_id,
             "answer_id": request.answer_id,
