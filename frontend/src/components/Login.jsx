@@ -1,11 +1,10 @@
-import { useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Brain } from 'lucide-react';
-import BackgroundGradient from './BackgroundGradient';
+import { useEffect, useState } from 'react';
+import CerberusIcon from './CerberusIcon';
 
 const Login = ({ onLogin }) => {
+  const [isLoading, setIsLoading] = useState(false);
+
   useEffect(() => {
-    // Carregar Google Identity Services
     const script = document.createElement('script');
     script.src = 'https://accounts.google.com/gsi/client';
     script.async = true;
@@ -23,19 +22,23 @@ const Login = ({ onLogin }) => {
         { 
           theme: 'filled_black',
           size: 'large',
-          width: 350,
-          text: 'signin_with',
-          shape: 'rectangular'
+          width: 300,
+          text: 'continue_with',
+          shape: 'rectangular',
+          logo_alignment: 'left'
         }
       );
     };
 
     return () => {
-      document.body.removeChild(script);
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
     };
   }, []);
 
   const handleGoogleLogin = async (response) => {
+    setIsLoading(true);
     try {
       const res = await fetch('http://localhost:8000/api/auth/google', {
         method: 'POST',
@@ -50,41 +53,86 @@ const Login = ({ onLogin }) => {
       onLogin(data.access_token);
     } catch (err) {
       console.error('Login error:', err);
-      alert('Erro ao fazer login com Google');
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center text-white relative bg-black">
-      <BackgroundGradient />
-      
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md px-6 relative z-10"
-      >
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 mb-4">
-            <Brain className="w-10 h-10 text-indigo-500" />
-            <span className="text-3xl font-bold tracking-tighter">Focus AI</span>
+    <div className="min-h-screen bg-black flex items-center justify-center p-4">
+      {/* Subtle background effect */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-radial from-red-950/20 via-transparent to-transparent opacity-50" />
+      </div>
+
+      <div className="relative z-10 w-full max-w-sm animate-fade-in">
+        {/* Logo */}
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center justify-center mb-4">
+            <CerberusIcon className="w-12 h-12 text-white" />
           </div>
-          <p className="text-zinc-600 text-sm">
-            Aprendizado profundo com metodologia socrática
+          <h1 className="text-2xl font-semibold tracking-tight text-white">
+            Cerberus AI
+          </h1>
+          <p className="text-cerberus-text-secondary text-sm mt-2">
+            Guardian of Knowledge
           </p>
         </div>
 
-        <div className="bg-zinc-950 border border-zinc-900 rounded-2xl p-8 shadow-2xl">
-          <div className="flex flex-col items-center gap-6">
-            <h2 className="text-xl font-semibold">Entre para continuar</h2>
-            
-            <div id="googleButton" className="w-full flex justify-center"></div>
-            
-            <p className="text-xs text-zinc-600 text-center">
-              Ao continuar, você concorda com nossos Termos de Serviço e Política de Privacidade
+        {/* Login Card */}
+        <div className="bg-cerberus-dark border border-cerberus-border rounded-2xl p-8">
+          <div className="text-center mb-6">
+            <h2 className="text-lg font-medium text-white">
+              Bem-vindo
+            </h2>
+            <p className="text-cerberus-text-muted text-sm mt-1">
+              Entre para continuar
             </p>
           </div>
+
+          {/* Google Button Container */}
+          <div className="flex justify-center">
+            {isLoading ? (
+              <div className="flex items-center justify-center h-10 text-cerberus-text-secondary">
+                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                  <circle 
+                    className="opacity-25" 
+                    cx="12" 
+                    cy="12" 
+                    r="10" 
+                    stroke="currentColor" 
+                    strokeWidth="4"
+                    fill="none"
+                  />
+                  <path 
+                    className="opacity-75" 
+                    fill="currentColor" 
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  />
+                </svg>
+              </div>
+            ) : (
+              <div id="googleButton" />
+            )}
+          </div>
+
+          {/* Terms */}
+          <p className="text-2xs text-cerberus-text-muted text-center mt-6 leading-relaxed">
+            Ao continuar, você concorda com os{' '}
+            <span className="text-cerberus-text-secondary hover:text-white cursor-pointer transition-colors">
+              Termos de Serviço
+            </span>
+            {' '}e{' '}
+            <span className="text-cerberus-text-secondary hover:text-white cursor-pointer transition-colors">
+              Política de Privacidade
+            </span>
+          </p>
         </div>
-      </motion.div>
+
+        {/* Footer */}
+        <p className="text-center text-2xs text-cerberus-text-muted mt-6">
+          Cerberus AI © 2025
+        </p>
+      </div>
     </div>
   );
 };
